@@ -12,7 +12,9 @@ public class GUI extends javax.swing.JFrame {
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(GUI.class.getName());
    
     private java.util.List<HealthProfessional> healthProfessionalList = new java.util.ArrayList<>();
-
+    private java.util.Deque<Object[]> undoStack = new java.util.ArrayDeque<>();
+    private int nextIdCounter;
+    
     /**
      * Creates new form GUI
      */
@@ -689,6 +691,23 @@ public class GUI extends javax.swing.JFrame {
        // Member 1 should replace this with their TreeMap/Sequential logic
        return "HP-" + (int)(Math.random() * 900 + 100);
    }
+
+    private void initIdCounter() {
+    int max = 99;
+    for (HealthProfessional hp : healthProfessionalList) {
+        try {
+            int num = Integer.parseInt(hp.getId().replace("HP-", ""));
+            if (num > max) max = num;
+        } catch (NumberFormatException e) {
+            // skip any IDs that don't follow the HP-xxx format
+        }
+    }
+    nextIdCounter = max + 1;
+}
+
+    private void saveForUndo(HealthProfessional hp, String action) {
+    undoStack.push(new Object[]{action, hp});
+}
     
     
     

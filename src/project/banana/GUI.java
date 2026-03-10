@@ -1,5 +1,10 @@
 package project.banana;
 
+
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Date
 import javax.swing.table.DefaultTableModel;
 
 
@@ -832,21 +837,247 @@ public class GUI extends javax.swing.JFrame {
         }
     }                                                
 
-    private void addAppointmentActionPerformed(java.awt.event.ActionEvent evt) {                                               
-      // USE BACKEND LOGIC FOR ADDING APPOINTMENT HERE
-    }                                              
+    private void addAppointmentActionPerformed(java.awt.event.ActionEvent evt) {
+        int index = professionalsList.getSelectedIndex();
+        if (index == -1 || index >= healthProfessionalList.size()) {
+            javax.swing.JOptionPane.showMessageDialog(
+                this,
+                "Please select a professional first."
+            );
+            return;
+        }
 
-    private void editAppointmentActionPerformed(java.awt.event.ActionEvent evt) {                                                
-      // USE BACKEND LOGIC FOR EDITTING APPOINTMENT HERE
-    }                                               
+        javax.swing.JTextField patientField = new javax.swing.JTextField(15);
+        javax.swing.JTextField treatmentField = new javax.swing.JTextField(15);
+        javax.swing.JSpinner startSpinner = createDateTimeSpinner(new Date());
+        javax.swing.JSpinner endSpinner = createDateTimeSpinner(
+            new Date(System.currentTimeMillis() + 60L * 60L * 1000L)
+        );
 
-    private void deleteAppointmentActionPerformed(java.awt.event.ActionEvent evt) {                                                  
-       // USE BACKEND LOGIC FOR REMOVING APPOINTMENT HERE
-    }                                                 
+        javax.swing.JPanel panel = new javax.swing.JPanel(
+            new java.awt.GridLayout(4, 2, 5, 5)
+        );
+        panel.add(new javax.swing.JLabel("Patient:"));
+        panel.add(patientField);
+        panel.add(new javax.swing.JLabel("Treatment:"));
+        panel.add(treatmentField);
+        panel.add(new javax.swing.JLabel("Start:"));
+        panel.add(startSpinner);
+        panel.add(new javax.swing.JLabel("End:"));
+        panel.add(endSpinner);
 
-    private void refreshPageTAB2ActionPerformed(java.awt.event.ActionEvent evt) {                                                
-       // USE BACKEND LOGIC FOR REFRESHING APPOINTMENTS PAGE HERE
-    }                                               
+        int result = javax.swing.JOptionPane.showConfirmDialog(
+            this,
+            panel,
+            "Add Appointment",
+            javax.swing.JOptionPane.OK_CANCEL_OPTION
+        );
+
+        if (result != javax.swing.JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        String patient = patientField.getText().trim();
+        String treatment = treatmentField.getText().trim();
+        LocalDateTime start = toLocalDateTime((Date) startSpinner.getValue());
+        LocalDateTime end = toLocalDateTime((Date) endSpinner.getValue());
+
+        if (patient.isEmpty() || treatment.isEmpty()) {
+            javax.swing.JOptionPane.showMessageDialog(
+                this,
+                "Patient and treatment are required."
+            );
+            return;
+        }
+
+        if (!end.isAfter(start)) {
+            javax.swing.JOptionPane.showMessageDialog(
+                this,
+                "End time must be after start time."
+            );
+            return;
+        }
+
+        HealthProfessional selected = healthProfessionalList.get(index);
+        Appointment appt = new Appointment(patient, start, end, treatment);
+        selected.getDiary().addAppointment(appt);
+        refreshDiaryTable(selected);
+    }
+
+    private void editAppointmentActionPerformed(
+        java.awt.event.ActionEvent evt
+    ) {
+        int professionalIndex = professionalsList.getSelectedIndex();
+        if (
+            professionalIndex == -1 ||
+            professionalIndex >= healthProfessionalList.size()
+        ) {
+            javax.swing.JOptionPane.showMessageDialog(
+                this,
+                "Please select a professional first."
+            );
+            return;
+        }
+
+        int selectedRow = diaryTable.getSelectedRow();
+        if (selectedRow == -1) {
+            javax.swing.JOptionPane.showMessageDialog(
+                this,
+                "Please select an appointment to edit."
+            );
+            return;
+        }
+
+        HealthProfessional selected = healthProfessionalList.get(
+            professionalIndex
+        );
+        java.util.List<Appointment> appointments = selected
+            .getDiary()
+            .getAllAppointments();
+        if (selectedRow >= appointments.size()) {
+            javax.swing.JOptionPane.showMessageDialog(
+                this,
+                "Selected appointment could not be found."
+            );
+            return;
+        }
+
+        Appointment existing = appointments.get(selectedRow);
+
+        javax.swing.JTextField patientField = new javax.swing.JTextField(
+            existing.getPatientName(),
+            15
+        );
+        javax.swing.JTextField treatmentField = new javax.swing.JTextField(
+            existing.getTreatmentType(),
+            15
+        );
+        javax.swing.JSpinner startSpinner = createDateTimeSpinner(
+            toDate(existing.getStartTime())
+        );
+        javax.swing.JSpinner endSpinner = createDateTimeSpinner(
+            toDate(existing.getEndTime())
+        );
+
+        javax.swing.JPanel panel = new javax.swing.JPanel(
+            new java.awt.GridLayout(4, 2, 5, 5)
+        );
+        panel.add(new javax.swing.JLabel("Patient:"));
+        panel.add(patientField);
+        panel.add(new javax.swing.JLabel("Treatment:"));
+        panel.add(treatmentField);
+        panel.add(new javax.swing.JLabel("Start:"));
+        panel.add(startSpinner);
+        panel.add(new javax.swing.JLabel("End:"));
+        panel.add(endSpinner);
+
+        int result = javax.swing.JOptionPane.showConfirmDialog(
+            this,
+            panel,
+            "Edit Appointment",
+            javax.swing.JOptionPane.OK_CANCEL_OPTION
+        );
+
+        if (result != javax.swing.JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        String patient = patientField.getText().trim();
+        String treatment = treatmentField.getText().trim();
+        LocalDateTime start = toLocalDateTime((Date) startSpinner.getValue());
+        LocalDateTime end = toLocalDateTime((Date) endSpinner.getValue());
+
+        if (patient.isEmpty() || treatment.isEmpty()) {
+            javax.swing.JOptionPane.showMessageDialog(
+                this,
+                "Patient and treatment are required."
+            );
+            return;
+        }
+
+        if (!end.isAfter(start)) {
+            javax.swing.JOptionPane.showMessageDialog(
+                this,
+                "End time must be after start time."
+            );
+            return;
+        }
+
+        selected.getDiary().removeAppointment(existing.getStartTime());
+        selected
+            .getDiary()
+            .addAppointment(new Appointment(patient, start, end, treatment));
+        refreshDiaryTable(selected);
+    }
+
+    private void deleteAppointmentActionPerformed(
+        java.awt.event.ActionEvent evt
+    ) {
+        int professionalIndex = professionalsList.getSelectedIndex();
+        if (
+            professionalIndex == -1 ||
+            professionalIndex >= healthProfessionalList.size()
+        ) {
+            javax.swing.JOptionPane.showMessageDialog(
+                this,
+                "Please select a professional first."
+            );
+            return;
+        }
+
+        int selectedRow = diaryTable.getSelectedRow();
+        if (selectedRow == -1) {
+            javax.swing.JOptionPane.showMessageDialog(
+                this,
+                "Please select an appointment to delete."
+            );
+            return;
+        }
+
+        HealthProfessional selected = healthProfessionalList.get(
+            professionalIndex
+        );
+        java.util.List<Appointment> appointments = selected
+            .getDiary()
+            .getAllAppointments();
+        if (selectedRow >= appointments.size()) {
+            javax.swing.JOptionPane.showMessageDialog(
+                this,
+                "Selected appointment could not be found."
+            );
+            return;
+        }
+
+        Appointment appt = appointments.get(selectedRow);
+        int confirm = javax.swing.JOptionPane.showConfirmDialog(
+            this,
+            "Delete the selected appointment for " +
+                appt.getPatientName() +
+                "?",
+            "Delete Appointment",
+            javax.swing.JOptionPane.YES_NO_OPTION
+        );
+
+        if (confirm != javax.swing.JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        selected.getDiary().removeAppointment(appt.getStartTime());
+        refreshDiaryTable(selected);
+    }
+
+    private void refreshPageTAB2ActionPerformed(
+        java.awt.event.ActionEvent evt
+    ) {
+        int index = professionalsList.getSelectedIndex();
+        if (index == -1 || index >= healthProfessionalList.size()) {
+            DefaultTableModel model = (DefaultTableModel) diaryTable.getModel();
+            model.setRowCount(0);
+            return;
+        }
+
+        refreshDiaryTable(healthProfessionalList.get(index));
+    }
 
     private void redoButtonActionPerformed(java.awt.event.ActionEvent evt) {                                           
         // TODO add your handling code here:

@@ -44,6 +44,23 @@ public class Diary {
         return removed;
     }
 
+    // Remove a specific appointment instance from the diary.
+    public boolean removeAppointment(Appointment appt) {
+        if (appt == null) return false;
+
+        LinkedList<Appointment> slot = entries.get(appt.getStartTime());
+        if (slot == null || slot.isEmpty()) return false;
+
+        boolean removed = slot.remove(appt);
+
+        if (removed && slot.isEmpty()) {
+            entries.remove(appt.getStartTime());
+        }
+
+        return removed;
+    }
+
+
     // Get all appointments in the diary (for display or export)
     public List<Appointment> getAllAppointments() {
         List<Appointment> all = new ArrayList<>();

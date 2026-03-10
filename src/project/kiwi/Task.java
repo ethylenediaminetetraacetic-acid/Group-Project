@@ -2,8 +2,8 @@ import java.io.Serializable;
 import java.util.UUID;
 
 /**
- * Desciption.
- * * @author Banana Monster
+ * Tasks tab back-end.
+ * * @author Huy Ngo
  *
  */
 
